@@ -1,7 +1,7 @@
 import { betterAuth } from "better-auth";
 import { drizzleAdapter } from "better-auth/adapters/drizzle";
-import { db } from "../db";
-import * as schema from "../db/schema";
+import { db } from "../../db";
+import * as schema from "../../db/schema";
 import { organization, jwt, magicLink, bearer } from "better-auth/plugins";
 import { KeyvSqlite } from "@keyv/sqlite";
 import { env } from "$env/dynamic/private";
@@ -36,10 +36,8 @@ export const auth = betterAuth({
     bearer(),
     organization(),
     magicLink({
-      sendMagicLink: async ({ email, token, url }, request) => {
-        console.log("Sending magic link to", email, "with token", token);
-        console.log("Magic link URL:", url);
-        console.log("Request:", request);
+      sendMagicLink: async ({ email, url }) => {
+        console.log("Sending magic link to", email, "with url", url);
       },
     }),
   ],

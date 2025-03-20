@@ -1,11 +1,11 @@
-import type { CreateNextContextOptions } from "@trpc/server/adapters/next";
+import { db } from "$lib/db";
+import type { RequestEvent } from "@sveltejs/kit";
 import { initTRPC } from "@trpc/server";
 import SuperJSON from "superjson";
 
-export const createContext = async (opts: CreateNextContextOptions) => {
-  console.info(opts);
+export const createContext = async (event: RequestEvent) => {
   return {
-    session: null,
+    event,
   };
 };
 
@@ -16,6 +16,18 @@ const t = initTRPC.context<Context>().create({
 });
 
 export const router = t.router;
-export const publicProcedure = t.procedure;
-export const mergeRouters = t.mergeRouters;
 export const middleware = t.middleware;
+
+const dbMiddleware = middleware(async ({ ctx, next }) => {
+  return next({
+    ctx: {
+      ...ctx,
+      db,
+    },
+  });
+});
+
+export const publicProcedure = t.procedure;
+export const publicDBProcedure = t.procedure.use(dbMiddleware);
+export const mergeRouters = t.mergeRouters;
+export const createCallerFactory = t.createCallerFactory;

@@ -1,13 +1,8 @@
-import { createHTTPServer } from "@trpc/server/adapters/standalone";
-import { createContext, mergeRouters, router } from "..";
+import { createCallerFactory, mergeRouters } from "..";
+import { userRouter } from "./user";
 
-const appRouter = mergeRouters(router({}));
+export const appRouter = mergeRouters(userRouter);
 
 export type AppRouter = typeof appRouter;
 
-const server = createHTTPServer({
-  router: appRouter,
-  createContext,
-});
-
-server.listen(3000);
+export const createCaller = createCallerFactory(appRouter);
