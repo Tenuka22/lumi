@@ -6,8 +6,16 @@ import { organization, jwt, magicLink, bearer } from "better-auth/plugins";
 import { KeyvSqlite } from "@keyv/sqlite";
 import { env } from "$env/dynamic/private";
 import Keyv from "keyv";
+import { Effect } from "effect";
 
 const keyv = new Keyv<string>(new KeyvSqlite(env.KV_URL!));
+
+const onMagicLinkSend = (email: string, url: string) =>
+  Effect.gen(function* () {
+    yield* Effect.succeed(
+      console.log("Sending magic link to", email, "with url", url)
+    );
+  });
 
 export const auth = betterAuth({
   database: drizzleAdapter(db, {
@@ -36,9 +44,8 @@ export const auth = betterAuth({
     bearer(),
     organization(),
     magicLink({
-      sendMagicLink: async ({ email, url }) => {
-        console.log("Sending magic link to", email, "with url", url);
-      },
+      sendMagicLink: async ({ email, url }) =>
+        await Effect.runPromise(onMagicLinkSend(email, url)),
     }),
   ],
 });

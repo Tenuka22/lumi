@@ -9,11 +9,11 @@
  * @param immediate If true, trigger the function on the leading edge instead of the trailing edge
  * @returns A debounced version of the provided function
  */
-export function debounce<T extends (...args: any[]) => any | Promise<unknown>>(
+export const debounce = <T extends (...args: any[]) => any | Promise<unknown>>(
   func: T,
   wait: number = 300,
   immediate: boolean = false
-): (...args: Parameters<T>) => void {
+): ((...args: Parameters<T>) => void) => {
   let timeout: ReturnType<typeof setTimeout> | null = null;
 
   return function (this: any, ...args: Parameters<T>): void {
@@ -35,4 +35,4 @@ export function debounce<T extends (...args: any[]) => any | Promise<unknown>>(
 
     if (callNow) func.apply(context, args);
   };
-}
+};

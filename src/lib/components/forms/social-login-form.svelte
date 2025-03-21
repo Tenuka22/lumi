@@ -10,7 +10,7 @@
   import * as Select from "$lib/components/ui/select";
   import { webAppConstants } from "$lib/constants/web-app";
   import { Globe } from "@lucide/svelte";
-  import { Effect } from "effect";
+  import { Console, Effect } from "effect";
   import { authClient } from "$lib/client/auth";
   import Spinner from "../ui/spinner/spinner.svelte";
   import { toast } from "svelte-sonner";
@@ -24,26 +24,69 @@
     formLoading: Writable<boolean>;
   } = $props();
 
+  const onSocialLogInUpdata = (
+    form: SuperValidated<Infer<typeof socialLogInSchema>>
+  ) =>
+    Effect.gen(function* () {
+      const formData = yield* Effect.succeed(form.data);
+
+      const { error: socialClientError } = yield* Effect.tryPromise({
+        try: async () =>
+          await authClient.signIn.social({
+            provider: formData.provider,
+          }),
+        catch: () =>
+          console.error(
+            new Error(
+              "Unknown Error occured while connecting to the " +
+                formData.provider +
+                " provider."
+            )
+          ),
+      });
+
+      if (socialClientError) {
+        switch (
+          socialClientError.code as keyof typeof authClient.$ERROR_CODES
+        ) {
+          case "FAILED_TO_CREATE_USER":
+            yield* Effect.die(
+              new Error(
+                "User account could not be created by the Social login from " +
+                  formData.provider +
+                  " provider."
+              )
+            );
+          case "FAILED_TO_CREATE_SESSION":
+            yield* Effect.die(
+              new Error(
+                "User session could not be created by the Social login from " +
+                  formData.provider +
+                  " provider."
+              )
+            );
+          default:
+            yield* Effect.die(
+              new Error(
+                "An unknown error occurred on the client during Social login from " +
+                  formData.provider +
+                  " provider."
+              )
+            );
+        }
+      }
+    });
+
   const form = superForm(passedForm, {
     validators: valibotClient(socialLogInSchema),
     onUpdate: async (event) =>
-      Effect.runPromise(
-        Effect.gen(function* () {
-          const formData = event.form.data;
-
-          const { error } = yield* Effect.promise(
-            async () =>
-              await authClient.signIn.social({
-                provider: formData.provider,
-              })
-          );
-
-          if (error)
-            return toast.error(
-              `Failed to connect with the social login : ${error?.message ?? "Unknown Error"}`
-            );
-        })
+      await Effect.runPromise(onSocialLogInUpdata(event.form)).then(
+        Console.log,
+        Console.error
       ),
+    onError: (event) => {
+      toast.error(event.result.error.message);
+    },
   });
 
   const { form: formData, enhance, submitting } = form;

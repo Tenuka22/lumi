@@ -7,7 +7,7 @@
   import { webAppConstants } from "$lib/constants/web-app";
   import { writable } from "svelte/store";
 
-  export const formLoading = writable(false);
+  const formLoading = writable(false);
   let { data }: { data: PageData } = $props();
 </script>
 

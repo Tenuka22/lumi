@@ -11,8 +11,7 @@
   import { Mail } from "@lucide/svelte";
   import Spinner from "../ui/spinner/spinner.svelte";
   import { authClient } from "$lib/client/auth";
-  import { Effect } from "effect";
-  import { toast } from "svelte-sonner";
+  import { Console, Effect } from "effect";
   import { writable, type Writable } from "svelte/store";
   import { debounce } from "$lib/hooks/debounce.svelte";
   import * as v from "valibot";
@@ -38,34 +37,70 @@
 
   const currentView = writable<"magic-verify" | "magic-login">("magic-login");
 
+  const onMagicLinkUpdate = (
+    form: SuperValidated<Infer<typeof logInFormSchema>>
+  ) =>
+    Effect.gen(function* () {
+      const formData = yield* Effect.succeed(form.data);
+
+      const { error: magicLinkClientError } = yield* Effect.tryPromise({
+        try: async () =>
+          await authClient.signIn.magicLink({
+            email: formData.email,
+            name: formData.name,
+          }),
+
+        catch: () =>
+          Effect.die(
+            new Error(
+              "Unknown Error occured while running the client magic link sending action."
+            )
+          ),
+      });
+
+      if (magicLinkClientError) {
+        switch (
+          magicLinkClientError.code as keyof typeof authClient.$ERROR_CODES
+        ) {
+          case "FAILED_TO_CREATE_USER":
+            yield* Effect.die(
+              new Error(
+                "User account could not be created by the Magic Link login."
+              )
+            );
+          case "FAILED_TO_CREATE_SESSION":
+            yield* Effect.die(
+              new Error(
+                "User session could not be created by the Magic Link login."
+              )
+            );
+          default:
+            yield* Effect.die(
+              new Error(
+                "An unknown error occurred on the client during Magic Link login."
+              )
+            );
+        }
+      }
+
+      return yield* Effect.succeed(currentView.set("magic-verify"));
+    });
+
   const form = superForm(passedForm, {
     validators: valibotClient(logInFormSchema),
     onUpdate: async (event) =>
-      Effect.runPromise(
-        Effect.gen(function* () {
-          const formData = event.form.data;
-          const { error } = yield* Effect.promise(
-            async () =>
-              await authClient.signIn.magicLink({
-                email: formData.email,
-                name: formData.name,
-              })
-          );
-          if (error)
-            return toast.error(
-              `Failed to send the Login Link : ${error?.message ?? "Unknown Error"}`
-            );
-
-          return currentView.set("magic-verify");
-        })
+      await Effect.runPromise(onMagicLinkUpdate(event.form)).then(
+        Console.log,
+        Console.error
       ),
   });
 
   const { form: formData, enhance, submitting } = form;
 
-  const checkEmailExists = debounce((email: string) => {
-    $emailExistsMutation.mutate(email);
-  }, 1000);
+  const checkEmailExists = debounce(
+    (email: string) => $emailExistsMutation.mutate(email),
+    1000
+  );
 
   $effect(() => {
     const parsedData = v.safeParse(v.pick(logInFormSchema, ["email"]), {
@@ -85,9 +120,7 @@
     }
   });
 
-  $effect(() => {
-    formLoading.set($submitting);
-  });
+  $effect(() => formLoading.set($submitting));
 </script>
 
 {#if $currentView === "magic-login"}
@@ -113,7 +146,7 @@
       </div>
     {/if}
 
-    {#if !$emailExistsMutation.isPending && !$emailExistsMutation.data?.emailExists}
+    {#if !$emailExistsMutation.isPending && !$emailExistsMutation.data?.data.emailExists}
       <Form.Field {form} name="name" class="gap-2">
         <Form.Control>
           {#snippet children({ props })}
