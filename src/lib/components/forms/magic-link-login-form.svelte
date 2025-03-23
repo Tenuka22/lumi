@@ -16,7 +16,6 @@
   import { debounce } from "$lib/hooks/debounce.svelte";
   import * as v from "valibot";
   import { trpc } from "$lib/trpc/client";
-  import { page } from "$app/state";
   import { createMutation } from "@tanstack/svelte-query";
   import { Skeleton } from "../ui/skeleton";
   import { Separator } from "../ui/separator";
@@ -31,7 +30,7 @@
 
   const emailExistsMutation = createMutation({
     mutationFn: async (email: string) =>
-      await trpc(page).auth.ifEmailExists.mutate({ email }),
+      await trpc().auth.ifEmailExists.mutate({ email }),
     mutationKey: ["emailExistsMutation"],
   });
 

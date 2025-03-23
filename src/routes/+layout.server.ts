@@ -3,6 +3,8 @@ import type { LayoutServerLoad } from "./$types";
 import { Effect } from "effect";
 
 export const load: LayoutServerLoad = async ({ locals, url }) => {
+  console.log("layout load");
+
   if (url.pathname.endsWith("/login") && locals.user) {
     throw redirect(303, "/");
   }

@@ -1,17 +1,22 @@
 import { db } from "$lib/db";
-import type { RequestEvent } from "@sveltejs/kit";
 import { initTRPC } from "@trpc/server";
+import type { FetchCreateContextFnOptions } from "@trpc/server/adapters/fetch";
+import type { Context } from "hono";
 import SuperJSON from "superjson";
 
-export const createContext = async (event: RequestEvent) => {
-  return {
-    event,
-  };
-};
+export const createContext = async (
+  _opts: FetchCreateContextFnOptions,
+  c: Context
+) => ({
+  var1: c.env.MY_VAR1,
+  var2: c.req.header("X-VAR2"),
+  _opts,
+  c,
+});
 
-export type Context = Awaited<ReturnType<typeof createContext>>;
+export type AppContext = Awaited<ReturnType<typeof createContext>>;
 
-const t = initTRPC.context<Context>().create({
+const t = initTRPC.context<AppContext>().create({
   transformer: SuperJSON,
 });
 
