@@ -57,6 +57,7 @@
                   " provider."
               )
             );
+            break;
           case "FAILED_TO_CREATE_SESSION":
             yield* Effect.die(
               new Error(
@@ -65,6 +66,7 @@
                   " provider."
               )
             );
+            break;
           default:
             yield* Effect.die(
               new Error(

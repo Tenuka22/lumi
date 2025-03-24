@@ -3,13 +3,12 @@ import { initTRPC } from "@trpc/server";
 import type { FetchCreateContextFnOptions } from "@trpc/server/adapters/fetch";
 import type { Context } from "hono";
 import SuperJSON from "superjson";
+import type { AppBindings } from "../../../server";
 
 export const createContext = async (
   _opts: FetchCreateContextFnOptions,
-  c: Context
+  c: Context<AppBindings>
 ) => ({
-  var1: c.env.MY_VAR1,
-  var2: c.req.header("X-VAR2"),
   _opts,
   c,
 });

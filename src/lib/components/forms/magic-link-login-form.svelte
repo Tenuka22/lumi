@@ -67,12 +67,14 @@
                 "User account could not be created by the Magic Link login."
               )
             );
+            break;
           case "FAILED_TO_CREATE_SESSION":
             yield* Effect.die(
               new Error(
                 "User session could not be created by the Magic Link login."
               )
             );
+            break;
           default:
             yield* Effect.die(
               new Error(
