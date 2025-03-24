@@ -15,7 +15,7 @@
     "db:start": "docker compose up",
     "db:push": "bunx drizzle-kit push",
     "db:migrate": "bunx drizzle-kit migrate",
-    "db:generate": "bunx @better-auth/cli@latest generate --config ./src/lib/server/auth/index.ts --output ./src/lib/server/auth-schema.ts --y && bunx drizzle-kit generate",
+    "db:generate": "bunx @better-auth/cli@latest generate --config ./src/lib/server/auth/index.ts --output ./src/lib/db/auth-schema.ts --y && bunx drizzle-kit generate",
     "db:studio": "bunx drizzle-kit studio"
   },
   "devDependencies": {

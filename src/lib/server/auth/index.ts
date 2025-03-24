@@ -2,11 +2,12 @@ import { betterAuth } from "better-auth";
 import { drizzleAdapter } from "better-auth/adapters/drizzle";
 import { db } from "../../db";
 import * as schema from "../../db/schema";
-import { organization, jwt, magicLink, bearer } from "better-auth/plugins";
+import { organization, magicLink, openAPI, jwt } from "better-auth/plugins";
 import { KeyvSqlite } from "@keyv/sqlite";
 import { env } from "$env/dynamic/private";
 import Keyv from "keyv";
 import { Effect } from "effect";
+import { adminEmails } from "$lib/constants/admins";
 
 const keyv = new Keyv<string>(new KeyvSqlite(env.KV_URL!));
 
@@ -35,13 +36,30 @@ export const auth = betterAuth({
       await keyv.delete(key);
     },
   },
+  databaseHooks: {
+    user: {
+      create: {
+        before: async (user) => {
+          const isUserAdmin = adminEmails.find((a) => user.email === a);
+          const userObj = { ...user, role: isUserAdmin ? "admin" : "user" };
+          return await { data: userObj };
+        },
+      },
+    },
+  },
   plugins: [
     jwt({
       jwt: {
-        expirationTime: "1h",
+        definePayload: ({ user }) => {
+          return {
+            id: user.id,
+            email: user.email,
+            role: user.role,
+          };
+        },
       },
     }),
-    bearer(),
+    openAPI(),
     organization(),
     magicLink({
       sendMagicLink: async ({ email, url }) =>

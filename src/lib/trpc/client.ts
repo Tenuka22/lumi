@@ -6,15 +6,26 @@ let browserClient: ReturnType<typeof createTRPCProxyClient<AppRouter>>;
 
 export const trpc = () => {
   const isBrowser = typeof window !== "undefined";
+
   if (isBrowser && browserClient) return browserClient;
+
+  const token = localStorage.getItem("bearer_token");
+
   const client = createTRPCProxyClient<AppRouter>({
     transformer: SuperJSON,
     links: [
       httpBatchLink({
-        url: "http://localhost:4000/trpc",
+        url: `${process.env.SERVER_URL}/trpc`,
+        headers: () => {
+          const headersList: Record<string, string> = {};
+          headersList["Authorization"] = `Bearer ${token}`;
+          console.log(headersList);
+          return headersList;
+        },
       }),
     ],
   });
+
   if (isBrowser) browserClient = client;
   return client;
 };
